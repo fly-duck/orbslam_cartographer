@@ -65,7 +65,7 @@ void LocalMapping::Run()
             // Check recent MapPoints
             {
 
-            BenchMark::Timer timer;
+            // BenchMark::Timer timer;
             MapPointCulling();
             }
 

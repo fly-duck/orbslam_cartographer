@@ -18,7 +18,7 @@
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
+#include <BenchMark.h>
 #include "Tracking.h"
 #include <ros/ros.h>
 
@@ -412,6 +412,13 @@ void Tracking::Track()
             mState = OK;
         else
             mState=LOST;
+
+
+        // if(bOK)
+        // {
+        //     ROS_INFO("STATE OK !");
+        // }
+
 
         // Update drawer
         mpFrameDrawer->Update(this);
@@ -1340,8 +1347,9 @@ void Tracking::UpdateLocalKeyFrames()
 bool Tracking::Relocalization()
 {
 
-
+    BenchMark::Timer timer;
     ROS_INFO("Relocalization!!!!!!!!!!!!!!!!!!!!!!!");
+    
     // Compute Bag of Words Vector
     mCurrentFrame.ComputeBoW();
     

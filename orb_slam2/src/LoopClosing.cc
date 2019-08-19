@@ -17,7 +17,8 @@
 * You should have received a copy of the GNU General Public License
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
-
+#include "BenchMark.h"
+#include <ros/ros.h>
 #include "LoopClosing.h"
 
 #include "Sim3Solver.h"
@@ -577,11 +578,13 @@ void LoopClosing::CorrectLoop()
     mbFinishedGBA = false;
     mbStopGBA = false;
     mpThreadGBA = new thread(&LoopClosing::RunGlobalBundleAdjustment,this,mpCurrentKF->mnId);
-
+    ROS_INFO("Current Pose");
+    std::cout<< mpCurrentKF->GetPose()<<"\n";
     // Loop closed. Release Local Mapping.
     mpLocalMapper->Release();
 
     mLastLoopKFid = mpCurrentKF->mnId;
+    
 }
 
 void LoopClosing::SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap)
@@ -654,6 +657,7 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF)
     // not included in the Global BA and they are not consistent with the updated map.
     // We need to propagate the correction through the spanning tree
     {
+        // BenchMark::Timer timer;   
         unique_lock<mutex> lock(mMutexGBA);
         if(idx!=mnFullBAIdx)
             return;
@@ -695,6 +699,8 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF)
                 }
 
                 pKF->mTcwBefGBA = pKF->GetPose();
+                // ROS_INFO("Loop closing update the keyframe");
+                // std::cout<< pKF->GetPose()<<"\n";
                 pKF->SetPose(pKF->mTcwGBA);
                 lpKFtoCheck.pop_front();
             }
@@ -742,7 +748,8 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF)
 
             cout << "Map updated!" << endl;
         }
-
+        ROS_INFO("UPDATE CURRENT KEYFRAME");
+        // std::cout<< mpCurrentKF->GetPose() << "\n";
         mbFinishedGBA = true;
         mbRunningGBA = false;
     }
