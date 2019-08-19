@@ -22,6 +22,7 @@
 #include "LoopClosing.h"
 #include "ORBmatcher.h"
 #include "Optimizer.h"
+#include "BenchMark.h"
 
 #include<mutex>
 
@@ -58,10 +59,15 @@ void LocalMapping::Run()
         if(CheckNewKeyFrames())
         {
             // BoW conversion and insertion in Map
+            // cmf : current frame as a class member 
             ProcessNewKeyFrame();
 
             // Check recent MapPoints
+            {
+
+            BenchMark::Timer timer;
             MapPointCulling();
+            }
 
             // Triangulate new MapPoints
             CreateNewMapPoints();
@@ -183,6 +189,7 @@ void LocalMapping::MapPointCulling()
     while(lit!=mlpRecentAddedMapPoints.end())
     {
         MapPoint* pMP = *lit;
+        //  cmf : isbad is a member function 
         if(pMP->isBad())
         {
             lit = mlpRecentAddedMapPoints.erase(lit);

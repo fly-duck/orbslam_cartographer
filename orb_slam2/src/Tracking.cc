@@ -20,6 +20,7 @@
 
 
 #include "Tracking.h"
+#include <ros/ros.h>
 
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
@@ -50,6 +51,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
 {
     // Load camera parameters from settings file
 
+   //cmf : setting param                            
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
     float fx = fSettings["Camera.fx"];
     float fy = fSettings["Camera.fy"];
@@ -74,6 +76,8 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
         DistCoef.resize(5);
         DistCoef.at<float>(4) = k3;
     }
+
+    // cmf: to class member 
     DistCoef.copyTo(mDistCoef);
 
     mbf = fSettings["Camera.bf"];
@@ -1335,8 +1339,12 @@ void Tracking::UpdateLocalKeyFrames()
 
 bool Tracking::Relocalization()
 {
+
+
+    ROS_INFO("Relocalization!!!!!!!!!!!!!!!!!!!!!!!");
     // Compute Bag of Words Vector
     mCurrentFrame.ComputeBoW();
+    
 
     // Relocalization is performed when tracking is lost
     // Track Lost: Query KeyFrame Database for keyframe candidates for relocalisation

@@ -39,6 +39,7 @@ System::System(const string strVocFile, const string strSettingsFile, const eSen
     "This program comes with ABSOLUTELY NO WARRANTY;" << endl  <<
     "This is free software, and you are welcome to redistribute it" << endl <<
     "under certain conditions. See LICENSE.txt." << endl << endl;
+    std::cout<< "so now I'm redistributing it "<< "\n";
 
     cout << "Input sensor was set to: ";
 

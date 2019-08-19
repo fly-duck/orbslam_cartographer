@@ -13,3 +13,4 @@ build/
 lib/
 .DS_Store
 .sync-config.cson
+.vscode
