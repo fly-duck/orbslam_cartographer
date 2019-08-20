@@ -1,5 +1,5 @@
 #include "Node.h"
-
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <iostream>
 
 Node::Node (ORB_SLAM2::System::eSensor sensor, ros::NodeHandle &node_handle, image_transport::ImageTransport &image_transport) {
@@ -18,6 +18,7 @@ Node::Node (ORB_SLAM2::System::eSensor sensor, ros::NodeHandle &node_handle, ima
   node_handle_.param(name_of_node_ + "/load_map", load_map_param_, false);
 
   orb_slam_ = new ORB_SLAM2::System (voc_file_name_param_, settings_file_name_param_, sensor, map_file_name_param_, load_map_param_);
+  initial_pose_pub_=node_handle_.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose",1);
 
   service_server_ = node_handle_.advertiseService(name_of_node_+"/save_map", &Node::SaveMapSrv, this);
 
@@ -83,10 +84,25 @@ void Node::PublishPositionAsTransform (cv::Mat position) {
 }
 
 void Node::PublishPositionAsPoseStamped (cv::Mat position) {
+  // std::cout<< position << "\n";
   tf::Transform grasp_tf = TransformFromMat (position);
   tf::Stamped<tf::Pose> grasp_tf_pose(grasp_tf, current_frame_time_, map_frame_id_param_);
   geometry_msgs::PoseStamped pose_msg;
   tf::poseStampedTFToMsg (grasp_tf_pose, pose_msg);
+  // pose_msg.
+  geometry_msgs::PoseWithCovarianceStamped initial_pose;
+  // initial_pose.header
+  initial_pose.pose.pose.orientation=pose_msg.pose.orientation;
+  initial_pose.pose.pose.position=pose_msg.pose.position;
+
+  // for( auto & ele :initial_pose.pose.covariance)
+  // {
+  //   ele = static_cast<float>(0);
+  // }
+  initial_pose.header=pose_msg.header;
+  std::string frame_id = "map";
+  initial_pose.header.frame_id=frame_id;
+  initial_pose_pub_.publish(initial_pose);
   pose_publisher_.publish(pose_msg);
 }
 

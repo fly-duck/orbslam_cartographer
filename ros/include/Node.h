@@ -73,6 +73,7 @@ class Node
     image_transport::Publisher rendered_image_publisher_;
     ros::Publisher map_points_publisher_;
     ros::Publisher pose_publisher_;
+    ros::Publisher initial_pose_pub_;
 
     ros::ServiceServer service_server_;
 

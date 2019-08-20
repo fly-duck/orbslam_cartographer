@@ -18,9 +18,9 @@
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
+#include "ros/ros.h"
 #include "Tracking.h"
-
+#include "BenchMark.h"
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
 
@@ -1335,6 +1335,7 @@ void Tracking::UpdateLocalKeyFrames()
 
 bool Tracking::Relocalization()
 {
+    BenchMark::Timer timer;
     // Compute Bag of Words Vector
     mCurrentFrame.ComputeBoW();
 
@@ -1346,6 +1347,7 @@ bool Tracking::Relocalization()
         return false;
 
     const int nKFs = vpCandidateKFs.size();
+    ROS_INFO_STREAM("Candidates nums "<< nKFs);
 
     // We perform first an ORB matching with each candidate
     // If enough matches are found we setup a PnP solver
