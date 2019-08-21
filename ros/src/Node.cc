@@ -83,12 +83,42 @@ void Node::PublishPositionAsTransform (cv::Mat position) {
   tf_broadcaster.sendTransform(tf::StampedTransform(transform, current_frame_time_, map_frame_id_param_, camera_frame_id_param_));
 }
 
+inline void PoseMsgToTF(const geometry_msgs::Pose& msg, tf::Transform& bt)
+{
+  bt = tf::Transform(tf::Quaternion(msg.orientation.x,
+                            msg.orientation.y,
+                            msg.orientation.z,
+                            msg.orientation.w),
+                 tf::Vector3(msg.position.x, msg.position.y, msg.position.z));
+}
+
+inline void ShowTFTransform( const tf::Transform& transform, const std::string & string ) 
+{
+
+    std::cout<< string << "\n";
+    std::cout << "row1" << transform.getBasis().getRow(1).x()<<" "<<transform.getBasis().getRow(1).y()<<" "<<transform.getBasis().getRow(1).z()<< "\n";
+    std::cout << "row2" << transform.getBasis().getRow(2).x()<<" "<<transform.getBasis().getRow(2).y()<<" "<<transform.getBasis().getRow(2).z()<< "\n";
+    std::cout << "row3" << transform.getBasis().getRow(3).x()<<" "<<transform.getBasis().getRow(3).y()<<" "<<transform.getBasis().getRow(3).z()<< "\n";
+
+    std::cout <<  "origin" << transform.getOrigin().x()<<" "<<transform.getOrigin().y()<<" "<<transform.getOrigin().z()<< "\n";
+
+}
+
+
 void Node::PublishPositionAsPoseStamped (cv::Mat position) {
   // std::cout<< position << "\n";
   tf::Transform grasp_tf = TransformFromMat (position);
+  // ShowTFTransform(grasp_tf,"before");
   tf::Stamped<tf::Pose> grasp_tf_pose(grasp_tf, current_frame_time_, map_frame_id_param_);
   geometry_msgs::PoseStamped pose_msg;
+  
   tf::poseStampedTFToMsg (grasp_tf_pose, pose_msg);
+  
+
+  // tf::Transform after;
+  // PoseMsgToTF(pose_msg.pose,after);
+  // ShowTFTransform(after,"after");
+
   // pose_msg.
   geometry_msgs::PoseWithCovarianceStamped initial_pose;
   // initial_pose.header
@@ -115,6 +145,26 @@ void Node::PublishRenderedImage (cv::Mat image) {
   rendered_image_publisher_.publish(rendered_image_msg);
 }
 
+template<typename T> 
+T Cal360(const T & number)
+{
+  return number*180/3.1415;
+}
+
+void ShowRPY(tf::Matrix3x3 matrix,const string & string)
+
+{
+  double x,y,z ;
+  matrix.getRPY(x,y,z);
+  x=Cal360(x);
+  y=Cal360(y);
+  z=Cal360(z);
+
+  std::cout<<string<<": "<<"x" << x<< "y"<< y<< "z"<< z<< "\n";
+  
+
+}
+
 
 tf::Transform Node::TransformFromMat (cv::Mat position_mat) {
   cv::Mat rotation(3,3,CV_32F);
@@ -135,13 +185,23 @@ tf::Transform Node::TransformFromMat (cv::Mat position_mat) {
                                     -1, 0, 0,
                                      0,-1, 0);
 
+  // x--> -90 z-->-90
+
   //Transform from orb coordinate system to ros coordinate system on camera coordinates
+  ShowRPY(tf_camera_rotation,"before");
   tf_camera_rotation = tf_orb_to_ros*tf_camera_rotation;
   tf_camera_translation = tf_orb_to_ros*tf_camera_translation;
+  ShowRPY(tf_camera_rotation,"After");
+
+
 
   //Inverse matrix
   tf_camera_rotation = tf_camera_rotation.transpose();
+  ShowRPY(tf_camera_rotation,"Transpose");
+
   tf_camera_translation = -(tf_camera_rotation*tf_camera_translation);
+
+
 
   //Transform from orb coordinate system to ros coordinate system on map coordinates
   tf_camera_rotation = tf_orb_to_ros*tf_camera_rotation;

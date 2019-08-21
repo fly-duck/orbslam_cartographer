@@ -28,13 +28,13 @@ Camera.RGB: 1
 ThDepth: 40.0
 
 # Deptmap values factor 
-DepthMapFactor: 10.0
+DepthMapFactor: 1000.0
 
 # ORB Extractor: Number of features per image
 ORBextractor.nFeatures: 2000
 
 # ORB Extractor: Scale factor between levels in the scale pyramid
-ORBextractor.scaleFactor: 1.2m
+ORBextractor.scaleFactor: 1.2
 
 # ORB Extractor: Number of levels in the scale pyramid
 ORBextractor.nLevels: 8

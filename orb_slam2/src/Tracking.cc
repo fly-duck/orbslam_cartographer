@@ -17,7 +17,7 @@
 * You should have received a copy of the GNU General Public License
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
-
+#include "laserodometry.h"
 #include "ros/ros.h"
 #include "Tracking.h"
 #include "BenchMark.h"
@@ -260,7 +260,12 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
 }
 
 void Tracking::Track()
+
 {
+
+    // Lidar::InputOdometry input_odom_;
+
+    // std::cout<< input_odom_.GetPose().x<<"\n";
     if(mState==NO_IMAGES_YET)
     {
         mState = NOT_INITIALIZED;
