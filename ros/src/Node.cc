@@ -151,7 +151,7 @@ T Cal360(const T & number)
   return number*180/3.1415;
 }
 
-void ShowRPY(tf::Matrix3x3 matrix,const string & string)
+void ShowRPY(tf::Matrix3x3 matrix,const std::string & string)
 
 {
   double x,y,z ;
@@ -166,7 +166,17 @@ void ShowRPY(tf::Matrix3x3 matrix,const string & string)
 }
 
 
+void inline ShowTranslation(const tf::Vector3& v3,const std::string & string )
+{
+  
+  std::cout<< string << "x : " << v3.x() << "y: " << v3.y() << "z: " <<v3.z() << "\n" ;
+
+}
+
+
 tf::Transform Node::TransformFromMat (cv::Mat position_mat) {
+  // std::cout <<"before : " << position_mat<< "\n";
+
   cv::Mat rotation(3,3,CV_32F);
   cv::Mat translation(3,1,CV_32F);
 
@@ -188,16 +198,18 @@ tf::Transform Node::TransformFromMat (cv::Mat position_mat) {
   // x--> -90 z-->-90
 
   //Transform from orb coordinate system to ros coordinate system on camera coordinates
-  ShowRPY(tf_camera_rotation,"before");
+  // ShowRPY(tf_camera_rotation,"before");
+  // ShowRPY(tf_camera_rotation,"before");
+  // ShowTranslation(tf_camera_translation,"before");
   tf_camera_rotation = tf_orb_to_ros*tf_camera_rotation;
   tf_camera_translation = tf_orb_to_ros*tf_camera_translation;
-  ShowRPY(tf_camera_rotation,"After");
+  // ShowRPY(tf_camera_rotation,"After");
 
 
-
+ 
   //Inverse matrix
   tf_camera_rotation = tf_camera_rotation.transpose();
-  ShowRPY(tf_camera_rotation,"Transpose");
+  // ShowRPY(tf_camera_rotation,"Transpose");
 
   tf_camera_translation = -(tf_camera_rotation*tf_camera_translation);
 
@@ -206,6 +218,38 @@ tf::Transform Node::TransformFromMat (cv::Mat position_mat) {
   //Transform from orb coordinate system to ros coordinate system on map coordinates
   tf_camera_rotation = tf_orb_to_ros*tf_camera_rotation;
   tf_camera_translation = tf_orb_to_ros*tf_camera_translation;
+  tf::Transform result =tf::Transform (tf_camera_rotation, tf_camera_translation);
+  
+  tf::Matrix3x3 carto_rotation;
+  tf::Vector3 carto_translation;
+  carto_rotation=tf_orb_to_ros.inverse()*result.getBasis();
+  carto_translation=tf_orb_to_ros.inverse()*result.getOrigin();
+  carto_translation=-(carto_rotation.inverse()*carto_translation);
+  carto_rotation=carto_rotation.transpose();
+  carto_rotation=tf_orb_to_ros.inverse()*carto_rotation;
+  carto_translation=tf_orb_to_ros.inverse()*carto_translation;
+
+  // ShowRPY(carto_rotation,"after");
+  // ShowTranslation(carto_translation,"after");
+
+  cv::Mat scan_pose= cv::Mat::zeros(4,4,CV_32F);
+  for(int i=0;i<3;++i)
+  {
+    scan_pose.at<float> (i,0)=carto_rotation.getRow(i).x();
+    scan_pose.at<float> (i,1)=carto_rotation.getRow(i).y();
+    scan_pose.at<float> (i,2)=carto_rotation.getRow(i).z();
+    scan_pose.at<float> (3,i)=0;
+  }
+
+
+  scan_pose.at<float> (0,3)=carto_translation.x();
+  scan_pose.at<float> (1,3)=carto_translation.y();
+  scan_pose.at<float> (2,3)=carto_translation.z();
+  scan_pose.at<float> (3,3)=1;
+
+
+
+  // std::cout <<"after: " << scan_pose << "\n";
 
   return tf::Transform (tf_camera_rotation, tf_camera_translation);
 }

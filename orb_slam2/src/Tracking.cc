@@ -263,9 +263,9 @@ void Tracking::Track()
 
 {
 
-    // Lidar::InputOdometry input_odom_;
+    Lidar::InputOdometry input_odom_;
 
-    // std::cout<< input_odom_.GetPose().x<<"\n";
+    std::cout<< input_odom_.GetPose().x<<"\n";
     if(mState==NO_IMAGES_YET)
     {
         mState = NOT_INITIALIZED;
