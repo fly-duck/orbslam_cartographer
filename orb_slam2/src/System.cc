@@ -28,10 +28,10 @@
 namespace ORB_SLAM2
 {
 
-System::System(const string strVocFile, const string strSettingsFile, const eSensor sensor,
+System::System(const string strVocFile, const string strSettingsFile, const eSensor sensor,tf2_ros::Buffer* const tf_buffer,
                const std::string & map_file, bool load_map): // map serialization addition
                mSensor(sensor), mbReset(false),mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false),
-               map_file(map_file), load_map(load_map)
+               map_file(map_file), load_map(load_map),tf_buffer_(tf_buffer)
 {
     // Output welcome message
     cout << endl <<
@@ -179,11 +179,22 @@ void System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const do
 
 void System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp)
 {
+
+    // geometry_msgs::TransformStamped transformStamped;
+    // try{
+    //   transformStamped = tf_buffer_->lookupTransform("odom", "base_link",
+    //                            ros::Time(0));
+    // }
+    // catch (tf2::TransformException &ex) {
+    //   ROS_WARN("%s",ex.what());
+    //   ros::Duration(1.0).sleep();
+    // }
     if(mSensor!=RGBD)
     {
         cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD." << endl;
         exit(-1);
     }
+    // std::cout<< transformStamped.transform.translation.x<<"\n";
 
     // Check mode change
     {

@@ -1,11 +1,13 @@
 #include "Node.h"
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <iostream>
+#include "laserodometry.h"
 
-Node::Node (ORB_SLAM2::System::eSensor sensor, ros::NodeHandle &node_handle, image_transport::ImageTransport &image_transport) {
+Node::Node (ORB_SLAM2::System::eSensor sensor, ros::NodeHandle &node_handle, image_transport::ImageTransport &image_transport):transform_listener_(tf_buffer_){
   name_of_node_ = ros::this_node::getName();
   node_handle_ = node_handle;
   min_observations_per_point_ = 2;
+
 
   //static parameters
   node_handle_.param(name_of_node_+ "/publish_pointcloud", publish_pointcloud_param_, true);
@@ -17,7 +19,7 @@ Node::Node (ORB_SLAM2::System::eSensor sensor, ros::NodeHandle &node_handle, ima
   node_handle_.param<std::string>(name_of_node_ + "/settings_file", settings_file_name_param_, "file_not_set");
   node_handle_.param(name_of_node_ + "/load_map", load_map_param_, false);
 
-  orb_slam_ = new ORB_SLAM2::System (voc_file_name_param_, settings_file_name_param_, sensor, map_file_name_param_, load_map_param_);
+  orb_slam_ = new ORB_SLAM2::System (voc_file_name_param_, settings_file_name_param_, sensor,&tf_buffer_, map_file_name_param_, load_map_param_);
   initial_pose_pub_=node_handle_.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose",1);
 
   service_server_ = node_handle_.advertiseService(name_of_node_+"/save_map", &Node::SaveMapSrv, this);
@@ -52,7 +54,14 @@ Node::~Node () {
 
 
 void Node::Update () {
+
+
+
+ 
+
+
   cv::Mat position = orb_slam_->GetCurrentPosition();
+
 
   if (!position.empty()) {
     PublishPositionAsTransform (position);

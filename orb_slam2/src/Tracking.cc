@@ -259,13 +259,56 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
     return mCurrentFrame.mTcw.clone();
 }
 
+cv::Mat GetCartographerOdom(const geometry_msgs::TransformStamped & transform )
+{
+    
+    tf::StampedTransform result;
+    const tf::Matrix3x3 tf_orb_to_ros (0, 0, 1,
+                                    -1, 0, 0,
+                                     0,-1, 0);
+  tf::transformStampedMsgToTF(transform,result);
+  tf::Matrix3x3 carto_rotation;
+  tf::Vector3 carto_translation;
+  carto_rotation=tf_orb_to_ros.inverse()*result.getBasis();
+  carto_translation=tf_orb_to_ros.inverse()*result.getOrigin();
+  carto_translation=-(carto_rotation.inverse()*carto_translation);
+  carto_rotation=carto_rotation.transpose();
+  carto_rotation=tf_orb_to_ros.inverse()*carto_rotation;
+  carto_translation=tf_orb_to_ros.inverse()*carto_translation;
+
+  // ShowRPY(carto_rotation,"after");
+  // ShowTranslation(carto_translation,"after");
+
+  cv::Mat scan_pose= cv::Mat::zeros(4,4,CV_32F);
+  for(int i=0;i<3;++i)
+  {
+    scan_pose.at<float> (i,0)=carto_rotation.getRow(i).x();
+    scan_pose.at<float> (i,1)=carto_rotation.getRow(i).y();
+    scan_pose.at<float> (i,2)=carto_rotation.getRow(i).z();
+    scan_pose.at<float> (3,i)=0;
+  }
+
+
+  scan_pose.at<float> (0,3)=carto_translation.x();
+  scan_pose.at<float> (1,3)=carto_translation.y();
+  scan_pose.at<float> (2,3)=carto_translation.z();
+  scan_pose.at<float> (3,3)=1;
+
+  return scan_pose;
+}
+
 void Tracking::Track()
 
 {
-
-    Lidar::InputOdometry input_odom_;
-
-    std::cout<< input_odom_.GetPose().x<<"\n";
+    try{
+      transformStamped_ = mpSystem->GetBuffer()->lookupTransform("odom", "base_link",
+                               ros::Time(0));
+    }
+    catch (tf2::TransformException &ex) {
+      ROS_WARN("%s",ex.what());
+      ros::Duration(1.0).sleep();
+    }    
+    
     if(mState==NO_IMAGES_YET)
     {
         mState = NOT_INITIALIZED;
@@ -1339,7 +1382,8 @@ void Tracking::UpdateLocalKeyFrames()
 }
 
 bool Tracking::Relocalization()
-{
+{   
+    
     BenchMark::Timer timer;
     // Compute Bag of Words Vector
     mCurrentFrame.ComputeBoW();
@@ -1350,6 +1394,7 @@ bool Tracking::Relocalization()
 
     if(vpCandidateKFs.empty())
         return false;
+
 
     const int nKFs = vpCandidateKFs.size();
     ROS_INFO_STREAM("Candidates nums "<< nKFs);
@@ -1411,7 +1456,7 @@ bool Tracking::Relocalization()
 
             PnPsolver* pSolver = vpPnPsolvers[i];
             cv::Mat Tcw = pSolver->iterate(5,bNoMore,vbInliers,nInliers);
-
+            Tcw=GetCartographerOdom(transformStamped_);
             // If Ransac reachs max. iterations discard keyframe
             if(bNoMore)
             {
@@ -1493,6 +1538,11 @@ bool Tracking::Relocalization()
 
     if(!bMatch)
     {
+        // mCur
+
+        //  cv::Mat Tcw=GetCartographerOdom(transformStamped_);
+        //  Tcw.copyTo(mCurrentFrame.mTcw);
+        // return true;
         mCurrentFrame.mTcw = cv::Mat::zeros(0, 0, CV_32F); // this prevents a segfault later (https://github.com/raulmur/ORB_SLAM2/pull/381#issuecomment-337312336)
         return false;
     }

@@ -26,15 +26,17 @@ class InputOdometry
 public:
     InputOdometry()
     {
-        
+    // transformStamped_.header.frame_id="base_footprint";
+    
     tf2_ros::Buffer buffer_;
     tf2_ros::TransformListener listener_(buffer_);
-        get_transform(buffer_);
-        pose_.x=transformStamped_.transform.translation.x;
-        pose_.y=transformStamped_.transform.translation.y;
-        pose_.z=transformStamped_.transform.translation.z;
+    get_transform(buffer_);
+      
+    pose_.x=transformStamped_.transform.translation.x;
+    pose_.y=transformStamped_.transform.translation.y;
+    pose_.z=transformStamped_.transform.translation.z;
 
-          // int argc;char**argv;
+            // int argc;char**argv;
         // ros::init(argc, argv, "my_tf2_listener");
 
 
@@ -44,8 +46,8 @@ public:
     void get_transform(tf2_ros::Buffer& buffer)
     {
     try{
-      transformStamped_ = buffer.lookupTransform("odom", "base_link",
-                               ros::Time(0));
+      transformStamped_ = buffer.lookupTransform("odom", "base_footprint",
+                               ros::Time(0),ros::Duration(0.5));
     }
     catch (tf2::TransformException &ex) {
       ROS_WARN("%s",ex.what());

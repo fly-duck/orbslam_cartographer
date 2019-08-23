@@ -24,7 +24,7 @@
 
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
-
+#include <geometry_msgs/TransformStamped.h>
 #include"FrameDrawer.h"
 #include"Map.h"
 #include"LocalMapping.h"
@@ -212,6 +212,8 @@ protected:
     bool mbRGB;
 
     list<MapPoint*> mlpTemporalPoints;
+    geometry_msgs::TransformStamped transformStamped_;
+    // const tf::Matrix3x3 tf_orb_to_ros_;
 };
 
 } //namespace ORB_SLAM

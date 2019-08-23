@@ -43,7 +43,7 @@
 
 #include "System.h"
 
-
+#include <tf2_ros/transform_listener.h>
 
 class Node
 {
@@ -89,6 +89,12 @@ class Node
     bool publish_pointcloud_param_;
     bool publish_pose_param_;
     int min_observations_per_point_;
+
+    tf2_ros::TransformListener transform_listener_;
+    tf2_ros::Buffer tf_buffer_;
+
+
+
 };
 
 #endif //ORBSLAM2_ROS_NODE_H_

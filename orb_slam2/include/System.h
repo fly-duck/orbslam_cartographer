@@ -36,6 +36,8 @@
 #include "KeyFrameDatabase.h"
 #include "ORBVocabulary.h"
 
+
+#include <tf2_ros/transform_listener.h>
 namespace ORB_SLAM2
 {
 class FrameDrawer;
@@ -57,8 +59,8 @@ public:
 public:
 
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
-    System(const string strVocFile, const string strSettingsFile, const eSensor sensor,
-           const std::string & map_file = "", bool load_map = false); // map serialization addition
+    System(const string strVocFile, const string strSettingsFile, const eSensor sensor,tf2_ros::Buffer* const tf_buffer,
+           const std::string & map_file ="", bool load_map = false); // map serialization addition
 
     // Proccess the given stereo frame. Images must be synchronized and rectified.
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
@@ -128,6 +130,12 @@ public:
     cv::Mat DrawCurrentFrame ();
 
     std::vector<MapPoint*> GetAllMapPoints();
+    
+    inline tf2_ros::Buffer* const GetBuffer() const 
+    {
+         return tf_buffer_;
+    }
+    
 
 private:
     bool SetCallStackSize (const rlim_t kNewStackSize);
@@ -196,6 +204,9 @@ private:
 
     // Current position
     cv::Mat current_position_;
+
+
+    tf2_ros::Buffer* const tf_buffer_;
 };
 
 }// namespace ORB_SLAM

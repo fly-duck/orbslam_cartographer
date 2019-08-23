@@ -52,6 +52,8 @@ class RGBDNode : public Node
     message_filters::Subscriber<sensor_msgs::Image> *rgb_subscriber_;
     message_filters::Subscriber<sensor_msgs::Image> *depth_subscriber_;
     message_filters::Synchronizer<sync_pol> *sync_;
+
+
 };
 
 #endif //ORBSLAM2_ROS_RGBDODE_H_
