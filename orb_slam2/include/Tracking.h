@@ -210,7 +210,7 @@ protected:
 
     //Color order (true RGB, false BGR, ignored if grayscale)
     bool mbRGB;
-
+    bool relocalization_use_carto_;
     list<MapPoint*> mlpTemporalPoints;
     geometry_msgs::TransformStamped transformStamped_;
     // const tf::Matrix3x3 tf_orb_to_ros_;

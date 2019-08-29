@@ -49,7 +49,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mpFrameDrawer(pFrameDrawer), mpMap(pMap), mnLastRelocFrameId(0), mnMinimumKeyFrames(5)
 {
     // Load camera parameters from settings file
-
+    relocalization_use_carto_=false;
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
     float fx = fSettings["Camera.fx"];
     float fy = fSettings["Camera.fy"];
@@ -349,6 +349,7 @@ void Tracking::Track()
 
                 if(mVelocity.empty() || mCurrentFrame.mnId<mnLastRelocFrameId+2)
                 {
+                    //change the camera pose 
                     bOK = TrackReferenceKeyFrame();
                 }
                 else
@@ -440,11 +441,13 @@ void Tracking::Track()
         // If we have an initial estimation of the camera pose and matching. Track the local map.
         if(!mbOnlyTracking)
         {
+            // std::cout<< "gg"<< "\n";
             if(bOK)
                 bOK = TrackLocalMap();
         }
         else
         {
+            // localization only
             // mbVO true means that there are few matches to MapPoints in the map. We cannot retrieve
             // a local map and therefore we do not perform TrackLocalMap(). Once the system relocalizes
             // the camera we will use the local map again.
@@ -463,6 +466,8 @@ void Tracking::Track()
         // If tracking were good, check if we insert a keyframe
         if(bOK)
         {
+
+            // std::cout<< "crash right hereee " << "\n";
             // Update motion model
             if(!mLastFrame.mTcw.empty())
             {
@@ -472,7 +477,10 @@ void Tracking::Track()
                 mVelocity = mCurrentFrame.mTcw*LastTwc;
             }
             else
+                {
+                mCurrentFrame.mTcw=GetCartographerOdom(transformStamped_);
                 mVelocity = cv::Mat();
+                }
 
             //mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
@@ -529,6 +537,7 @@ void Tracking::Track()
     }
 
     // Store frame pose information to retrieve the complete camera trajectory afterwards.
+
     if(!mCurrentFrame.mTcw.empty())
     {
         cv::Mat Tcr = mCurrentFrame.mTcw*mCurrentFrame.mpReferenceKF->GetPoseInverse();
@@ -781,8 +790,15 @@ void Tracking::CreateInitialMapMonocular()
 
 void Tracking::CheckReplacedInLastFrame()
 {
+    // if odom use carto will not checkout the map 
+    // if(relocalization_use_carto_)
+    // {
+    //     relocalization_use_carto_=false;
+    //     return ;
+    // }
     for(int i =0; i<mLastFrame.N; i++)
     {
+        // to do checkout map created in lost tracking situation 
         MapPoint* pMP = mLastFrame.mvpMapPoints[i];
 
         if(pMP)
@@ -799,6 +815,8 @@ void Tracking::CheckReplacedInLastFrame()
 
 bool Tracking::TrackReferenceKeyFrame()
 {
+    // if(GetCartographerOdom)
+    //     return false;
     // Compute Bag of Words vector
     mCurrentFrame.ComputeBoW();
 
@@ -813,7 +831,8 @@ bool Tracking::TrackReferenceKeyFrame()
         return false;
 
     mCurrentFrame.mvpMapPoints = vpMapPointMatches;
-    mCurrentFrame.SetPose(mLastFrame.mTcw);
+    mCurrentFrame.SetPose(GetCartographerOdom(transformStamped_));
+    // mCurrentFrame.SetPose(mLastFrame.mTcw);
 
     Optimizer::PoseOptimization(&mCurrentFrame);
 
@@ -909,6 +928,11 @@ void Tracking::UpdateLastFrame()
 
 bool Tracking::TrackWithMotionModel()
 {
+    // if(GetCartographerOdom)
+    //     {
+    //         std::cout<< "in the motion model " << "\n";
+    //         return false;
+    //     }
     ORBmatcher matcher(0.9,true);
 
     // Update last frame pose according to its reference keyframe
@@ -976,8 +1000,10 @@ bool Tracking::TrackLocalMap()
     // We retrieve the local map and try to find matches to points in the local map.
 
     UpdateLocalMap();
-
+    // std::cout<< "crash in here11132323" << "\n";
+    // the below cause crash 
     SearchLocalPoints();
+    // std::cout<< "crash in here111" << "\n";
 
     // Optimize Pose
     Optimizer::PoseOptimization(&mCurrentFrame);
@@ -1185,6 +1211,8 @@ void Tracking::CreateNewKeyFrame()
 
 void Tracking::SearchLocalPoints()
 {
+    // if(relocalization_use_carto_)
+    // return ;
     // Do not search map points already matched
     for(vector<MapPoint*>::iterator vit=mCurrentFrame.mvpMapPoints.begin(), vend=mCurrentFrame.mvpMapPoints.end(); vit!=vend; vit++)
     {
@@ -1237,12 +1265,15 @@ void Tracking::SearchLocalPoints()
 
 void Tracking::UpdateLocalMap()
 {
+
     // This is for visualization
     mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 
     // Update
     UpdateLocalKeyFrames();
+    // std::cout<< "crash in here" << "\n";
     UpdateLocalPoints();
+
 }
 
 void Tracking::UpdateLocalPoints()
@@ -1393,7 +1424,13 @@ bool Tracking::Relocalization()
     vector<KeyFrame*> vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame);
 
     if(vpCandidateKFs.empty())
+    {
+        
+        // mnLastRelocFrameId = mCurrentFrame.mnId;
+        // relocalization_use_carto_=true;
+        // return true;
         return false;
+    }
 
 
     const int nKFs = vpCandidateKFs.size();
